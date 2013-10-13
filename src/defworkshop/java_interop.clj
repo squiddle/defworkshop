@@ -117,26 +117,26 @@ hint: use bean to access thread information."
 ;;   * `:name` fully qualified name of the class (together with package).
 ;;
 
-(comment
+
   (gen-class
    :name workshop_tasks_implemented.java_interop.Shout
    :prefix Shout-
-   :state …
-   :init …
-   :constructors …))
+   :state state
+   :init init
+   :constructors {[String] []})
 
 (defn- Shout-toString
   [this]
-  (…))
+  (.state this))
 
 (defn- Shout-init
   [s]
-  [nil (…)])
+  [nil (.toUpperCase s)])
 
-(defn ^:not-implemented shout
+(defn shout
   "Implement a factory function for `Shout` class, that would call a constructor of the class."
   [str]
-  (…))
+  (workshop_tasks_implemented.java_interop.Shout. str))
 
 ;; Implement a `Greeter` class, whose Java implementation would look something like that:
 ;;
@@ -158,20 +158,20 @@ hint: use bean to access thread information."
 ;; receives `String` and returns that string concatenated with `Hello`.
 ;;
 
-(comment
+
   (gen-class
    :name workshop_tasks_implemented.java_interop.Greeter
    :prefix Greeter-
-   :methods …))
+   :methods [[greet [String] String]])
 
 (defn- Greeter-greet
   [this s]
-  (…))
+  (str "Hello, " s "!"))
 
-(defn ^:not-implemented greeter
+(defn greeter
   "Make a factory function that would create an instance of `Greeter` class."
   []
-  (…))
+  (workshop_tasks_implemented.java_interop.Greeter.))
 
 ;; You can also implement interfaces using `gen-class`, for that you should use `:implements`
 ;; attribute, for example:
@@ -179,57 +179,58 @@ hint: use bean to access thread information."
 ;;      :implements [clojure.lang.Seqable]
 ;;
 
-(comment
   (gen-class
    :name workshop_tasks_implemented.java_interop.MySeq
    :prefix MySeq-
-   :state …
-   :init …
-   :constructors …
-   :implements [clojure.lang.Seqable]))
+   :state state
+   :init init
+   :constructors {[java.util.Collection] []}
+   :implements [clojure.lang.Seqable])
 
 (defn- MySeq-seq
   [this]
-  (…))
+  (seq (.state this)))
 
 (defn- MySeq-init
   ([xs]
 
-   [nil (…)]))
+   [nil xs]))
 
-(defn ^:not-implemented my-seq
+(defn my-seq
   [coll]
-  (…))
+  (workshop_tasks_implemented.java_interop.MySeq. coll))
 
 ;; Implement a `ImmutableQueue` class, that receives `clojure.lang.Sequable`
 ;; as a constructor, and implements`java.util.Queue`.
 ;;
 ;;
 
-(comment
   (gen-class
    :name workshop_tasks_implemented.java_interop.ImmutableQueue
    :prefix Queue-
-   :state …
-   :init …
-   :constructors …
-   :implements [java.util.Queue]))
+   :state state
+   :init init
+   :constructors {[clojure.lang.Seqable] []}
+   :implements [java.util.Queue])
 
 (defn- Queue-init
   ([xs]
-   [nil (…)]))
+   [nil xs]))
 
 (defn- Queue-peek
   "Implement a `peek` function for queue that gets first item from the `state`
    of the queue."
   [this]
-  (…))
+  (first (.state this)))
 
 (defn- Queue-element
   "Implement `element` method for queue, that returns head element from the queue and throws
    `java.util.NoSuchElementException`."
   [this]
-  (…))
+  (let [ret (nth (.state this) ::not-found)]
+    (if (= ret ::not-found)
+      (throw (java.util.NoSuchElementException.))
+      ret)))
 
 (defn- Queue-poll
   [this]
@@ -239,31 +240,30 @@ hint: use bean to access thread information."
   [this]
   (throw (RuntimeException. "Can't remove from ImmutableQueue")))
 
-(defn ^:not-implemented immutable-queue
+(defn immutable-queue
   [^clojure.lang.Seqable els]
-  (…))
+  (workshop_tasks_implemented.java_interop.ImmutableQueue. els))
 
 ;; Implement a `MutableQueue`, backed by the `ref`
 ;;
-(comment
   (gen-class
    :name workshop_tasks_implemented.java_interop.MutableQueue
    :prefix MQueue-
-   :state …
-   :init …
-   :constructors …
-   :implements [java.util.Queue]))
+   :state state
+   :init init
+   :constructors {[clojure.lang.Seqable] []}
+   :implements [java.util.Queue])
 
 (defn- MQueue-init
   ([xs]
-   [nil (…)]))
+   [nil (ref xs)]))
 
 (defn- MQueue-peek
   "Implement `peek` from the queue, that returns the head element from the queue.
 
    You can use `deref` to dereference a `ref`."
   [this]
-  (…))
+  (first @(.state this)))
 
 (defn- MQueue-poll
   "Implement `poll` for the queue, that gets first element from the `state`, and
@@ -271,7 +271,10 @@ hint: use bean to access thread information."
 
    You can use `commute` to mutate the ref, just remember you should do it within `dosync` block."
   [this]
-  (…))
+  (dosync
+    (let [ret (first @(.state this))]
+      (commute (.state this) #(rest %))
+      ret)))
 
 (defn- MQueue-remove
   "Implement `remove` that removes the head element from the queue, and throws `java.util.NoSuchElementException`
@@ -289,9 +292,9 @@ hint: use bean to access thread information."
   [this]
   (…))
 
-(defn ^:not-implemented mutable-queue
+(defn mutable-queue
   [^clojure.lang.Seqable els]
-  (…))
+  (workshop_tasks_implemented.java_interop.MutableQueue. els))
 
 (defn ^:not-implemented -main
   [& args]
