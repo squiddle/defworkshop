@@ -272,8 +272,9 @@ hint: use bean to access thread information."
    You can use `commute` to mutate the ref, just remember you should do it within `dosync` block."
   [this]
   (dosync
-    (let [ret (first @(.state this))]
-      (commute (.state this) #(rest %))
+    (let [ret (first @(.state this))
+          tail (rest @(.state this))]
+      (alter (.state this) tail)
       ret)))
 
 (defn- MQueue-remove
@@ -282,7 +283,9 @@ hint: use bean to access thread information."
 
    You can reuse `poll` implementation here."
   [this]
-  (…))
+  (if-let [ret (.poll this)]
+    ret
+    (throw (java.util.NoSuchElementException.))))
 
 (defn- MQueue-element
   "Implement `element` for the queue, that gets head element from the queue and throws `java.util.NoSuchElementException`
@@ -290,7 +293,10 @@ hint: use bean to access thread information."
 
    You can reuse `peek` implementation here, too."
   [this]
-  (…))
+  (let [ret (.peek this)]
+    (if (nil? ret) 
+      (throw (java.util.NoSuchElementException.))
+      ret)))
 
 (defn mutable-queue
   [^clojure.lang.Seqable els]
